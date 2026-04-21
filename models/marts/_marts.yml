@@ -1,0 +1,37 @@
+version: 2
+
+# ----------------------------------------------------------------------------
+# TODO (learner) — fill this file with:
+#   1. Generic tests (not_null, unique, relationships, accepted_values) on
+#      the key columns. Aim for at least 5 tests total across both models.
+#   2. A CONTRACT on dim_customers that declares the full column schema
+#      with types. This is what CI will test against: if you change a
+#      type or drop a column, the build must fail.
+#
+# Reference on contracts:
+#   https://docs.getdbt.com/reference/resource-configs/contract
+#
+# Example skeleton (delete and replace with real declarations):
+#
+#   - name: dim_customers
+#     config:
+#       contract:
+#         enforced: true
+#     columns:
+#       - name: customer_id
+#         data_type: varchar
+#         data_tests:
+#           - not_null
+#           - unique
+#       - name: ...
+# ----------------------------------------------------------------------------
+
+models:
+  - name: dim_customers
+    description: "Customer dimension, one row per customer, enriched with order aggregates."
+    # TODO: add contract + columns + tests
+
+  - name: fct_orders
+    description: "Orders fact, one row per order, enriched with customer country."
+    # TODO: add columns + tests (at least: not_null + unique on order_id,
+    # relationships to dim_customers on customer_id, accepted_values on status)

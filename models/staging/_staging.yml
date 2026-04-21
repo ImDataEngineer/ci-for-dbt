@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Typed customer rows, one per customer_id."
+    columns:
+      - name: customer_id
+        description: "Primary key, matches raw_customers.customer_id."
+        data_tests:
+          - not_null
+          - unique
+      - name: email
+        description: "Lowercased, trimmed contact email."
+      - name: name
+      - name: country
+      - name: plan
+      - name: signed_up_at
+        description: "Date the customer signed up. Cast to DATE."
+
+  - name: stg_orders
+    description: "Typed orders with a derived EUR amount."
+    columns:
+      - name: order_id
+        description: "Primary key, unique across all orders."
+      - name: customer_id
+        description: "Foreign key to stg_customers.customer_id."
+      - name: order_date
+      - name: amount_cents
+      - name: amount_eur
+      - name: status

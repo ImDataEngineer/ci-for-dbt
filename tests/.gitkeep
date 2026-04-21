@@ -1,0 +1,7 @@
+# Place your singular tests here (one .sql file per test).
+# A singular test is a query that returns rows when a business rule is
+# violated. Example: "orders must have a positive amount":
+#
+#   select * from {{ ref('fct_orders') }} where amount_cents <= 0
+#
+# The test passes when the query returns zero rows.

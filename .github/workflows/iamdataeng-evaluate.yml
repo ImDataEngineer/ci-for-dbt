@@ -1,0 +1,112 @@
+name: iamdataeng-evaluate
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # --------------------------------------------------------------------------
+  # The main evaluation: dbt build must succeed, SQL must lint, and we must
+  # count ≥ 5 tests executed in the run results.
+  # --------------------------------------------------------------------------
+  evaluate:
+    name: Build, lint, test-count
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: dbt deps
+        run: dbt deps --profiles-dir .
+
+      - name: dbt seed + build (must succeed)
+        id: dbt_build
+        run: dbt build --profiles-dir . --target ci
+
+      - name: Count executed tests (must be >= 5)
+        id: test_count
+        run: |
+          python - <<'PY'
+          import json, sys
+          with open("target/run_results.json") as f:
+              results = json.load(f)
+          tests = [r for r in results["results"] if r.get("unique_id", "").startswith("test.")]
+          count = len(tests)
+          passed = sum(1 for r in tests if r["status"] == "pass")
+          print(f"::notice::Tests executed: {count} (passed: {passed})")
+          if count < 5:
+              print(f"::error::Expected at least 5 tests, found {count}. "
+                    f"Add generic tests (not_null, unique, relationships, "
+                    f"accepted_values) or singular tests under tests/.")
+              sys.exit(1)
+          PY
+
+      - name: sqlfluff lint
+        id: sqlfluff
+        run: sqlfluff lint models/
+
+  # --------------------------------------------------------------------------
+  # Schema breakage: we rename a column in a seed, then dbt build MUST fail.
+  # If it succeeds, the learner's contract doesn't actually enforce types —
+  # that's the pedagogical catch.
+  # --------------------------------------------------------------------------
+  contract-breakage:
+    name: Contract must catch a type change
+    runs-on: ubuntu-latest
+    needs: evaluate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: dbt deps
+        run: dbt deps --profiles-dir .
+
+      - name: Inject a type-breaking change in raw_customers.csv
+        run: |
+          # Change the column name `signed_up_at` (a DATE in the contract) to
+          # `signup_ts`. A proper contract on dim_customers that references
+          # signed_up_at will now fail to resolve, and the build will abort.
+          sed -i 's/signed_up_at/signup_ts/' seeds/raw_customers.csv
+          echo "Modified seed head:"
+          head -1 seeds/raw_customers.csv
+
+      - name: dbt build (expected to FAIL — contract should catch it)
+        id: expect_fail
+        run: |
+          set +e
+          dbt build --profiles-dir . --target ci
+          rc=$?
+          set -e
+          if [ $rc -eq 0 ]; then
+            echo "::error::Contract breakage was NOT caught. After renaming 'signed_up_at' to 'signup_ts' in the seed, dbt build still succeeded. This means your dim_customers contract doesn't actually enforce the schema. Declare every column (with data_type) under 'columns:' in _marts.yml and set config.contract.enforced: true."
+            exit 1
+          fi
+          echo "::notice::Contract correctly caught the type change. dbt build exited with rc=$rc."

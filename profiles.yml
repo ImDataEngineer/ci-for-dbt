@@ -1,0 +1,15 @@
+# dbt profile pointing at a local DuckDB file. Using profiles.yml in the
+# project root (and passing --profiles-dir .) keeps everything self-contained
+# so CI can invoke dbt without any global setup.
+
+ci_for_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "./dev.duckdb"
+      threads: 4
+    ci:
+      type: duckdb
+      path: "./ci.duckdb"
+      threads: 2

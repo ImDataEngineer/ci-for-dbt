@@ -1,0 +1,27 @@
+[sqlfluff]
+# DuckDB speaks an ANSI-ish SQL with Postgres-like additions. "duckdb" is the
+# right dialect (sqlfluff ≥3.0 ships support).
+dialect = duckdb
+templater = dbt
+rules = all
+exclude_rules = structure.column_order, layout.long_lines, capitalisation.literals
+
+[sqlfluff:indentation]
+indent_unit = space
+tab_space_size = 4
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = lower
+
+[sqlfluff:templater:dbt]
+project_dir = .
+profiles_dir = .

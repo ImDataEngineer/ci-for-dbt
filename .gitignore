@@ -1,0 +1,27 @@
+# dbt
+target/
+dbt_packages/
+logs/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# DuckDB local dev database
+*.duckdb
+*.duckdb.wal
+
+# env
+.env
+.env.local
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store

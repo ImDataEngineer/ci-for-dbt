@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "ci-for-dbt",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt && dbt deps --profiles-dir .",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "innoverio.vscode-dbt-power-user",
+        "samuelcolvin.jinjahtml",
+        "redhat.vscode-yaml",
+        "mtxr.sqltools",
+        "evidence.sqltools-duckdb-driver",
+        "dorzey.vscode-sqlfluff"
+      ],
+      "settings": {
+        "files.exclude": {
+          "target/": true,
+          "dbt_packages/": true,
+          "logs/": true,
+          "*.duckdb*": true
+        }
+      }
+    }
+  },
+  "remoteEnv": {
+    "DBT_PROFILES_DIR": "${containerWorkspaceFolder}"
+  }
+}
