@@ -1,19 +1,19 @@
--- TODO (learner): build the orders fact.
+-- TODO (à toi) : construis le fact commandes.
 --
--- Expected columns:
---   order_id           (primary key, unique, not null)
---   customer_id        (foreign key to dim_customers.customer_id)
+-- Colonnes attendues :
+--   order_id           (clé primaire, unique, not null)
+--   customer_id        (clé étrangère vers dim_customers.customer_id)
 --   order_date
 --   amount_cents
 --   amount_eur
---   status             (only 'placed', 'paid', 'cancelled', 'refunded')
---   is_revenue         (boolean: true iff status = 'paid')
---   customer_country   (joined from dim_customers — denormalized for the
---                       analyst downstream who wants `revenue by country`
---                       without a join)
+--   status             (seulement 'placed', 'paid', 'cancelled', 'refunded')
+--   is_revenue         (booléen : true ssi status = 'paid')
+--   customer_country   (joint depuis dim_customers — dénormalisé pour que
+--                       l'analyste en aval fasse "revenue by country" sans
+--                       avoir à refaire le join)
 --
--- Start from {{ ref('stg_orders') }} left joined to {{ ref('dim_customers') }}
--- on customer_id.
+-- Pars de {{ ref('stg_orders') }} LEFT JOIN {{ ref('dim_customers') }}
+-- sur customer_id.
 
 select
-    1 as placeholder  -- replace me
+    1 as placeholder  -- remplace-moi

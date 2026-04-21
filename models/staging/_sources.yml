@@ -2,10 +2,10 @@ version: 2
 
 sources:
   - name: raw
-    description: "Source tables loaded from CSV seeds."
+    description: "Tables sources chargées depuis les seeds CSV."
     schema: main
     tables:
       - name: raw_customers
-        description: "Customer base. One row per customer, keyed on customer_id."
+        description: "Base clients. Une ligne par client, clé customer_id."
       - name: raw_orders
-        description: "Orders placed by customers. One row per order."
+        description: "Commandes passées par les clients. Une ligne par commande."

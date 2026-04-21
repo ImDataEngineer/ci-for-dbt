@@ -1,6 +1,6 @@
--- Staging model: clean and type the raw customers seed.
--- Reference implementation — left complete so you can see the pattern.
--- Your job is in the marts/ layer.
+-- Staging : nettoie et type le seed raw_customers.
+-- Implémentation de référence — laissée complète pour que tu voies le pattern.
+-- Ton travail est dans la couche marts/.
 
 with source as (
     select * from {{ ref('raw_customers') }}

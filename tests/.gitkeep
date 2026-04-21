@@ -1,7 +1,11 @@
-# Place your singular tests here (one .sql file per test).
-# A singular test is a query that returns rows when a business rule is
-# violated. Example: "orders must have a positive amount":
+# Pose tes tests singuliers ici (un fichier .sql par test).
+# Un test singulier est une requête qui retourne des lignes quand une règle
+# métier est violée. Exemple : "une commande doit avoir un montant > 0,
+# sauf si elle est cancelled ou refunded" :
 #
-#   select * from {{ ref('fct_orders') }} where amount_cents <= 0
+#   select *
+#   from {{ ref('fct_orders') }}
+#   where amount_cents <= 0
+#     and status not in ('cancelled', 'refunded')
 #
-# The test passes when the query returns zero rows.
+# Le test passe quand la requête retourne zéro ligne.

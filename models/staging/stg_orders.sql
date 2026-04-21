@@ -1,5 +1,5 @@
--- Staging model: clean and type the raw orders seed.
--- Reference implementation — left complete so you can see the pattern.
+-- Staging : nettoie et type le seed raw_orders.
+-- Implémentation de référence — laissée complète pour que tu voies le pattern.
 
 with source as (
     select * from {{ ref('raw_orders') }}

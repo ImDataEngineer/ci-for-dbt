@@ -48,11 +48,12 @@ jobs:
           tests = [r for r in results["results"] if r.get("unique_id", "").startswith("test.")]
           count = len(tests)
           passed = sum(1 for r in tests if r["status"] == "pass")
-          print(f"::notice::Tests executed: {count} (passed: {passed})")
+          print(f"::notice::Tests exécutés : {count} (réussis : {passed})")
           if count < 5:
-              print(f"::error::Expected at least 5 tests, found {count}. "
-                    f"Add generic tests (not_null, unique, relationships, "
-                    f"accepted_values) or singular tests under tests/.")
+              print(f"::error::Attendu au moins 5 tests, trouvé {count}. "
+                    f"Ajoute des tests génériques (not_null, unique, relationships, "
+                    f"accepted_values) dans models/marts/_marts.yml, ou un test "
+                    f"singulier dans tests/ (un .sql qui retourne 0 ligne quand la règle métier est respectée).")
               sys.exit(1)
           PY
 
@@ -106,7 +107,7 @@ jobs:
           rc=$?
           set -e
           if [ $rc -eq 0 ]; then
-            echo "::error::Contract breakage was NOT caught. After renaming 'signed_up_at' to 'signup_ts' in the seed, dbt build still succeeded. This means your dim_customers contract doesn't actually enforce the schema. Declare every column (with data_type) under 'columns:' in _marts.yml and set config.contract.enforced: true."
+            echo "::error::Le breakage de schéma n'a PAS été détecté. Après avoir renommé 'signed_up_at' en 'signup_ts' dans le seed, dbt build a quand même réussi. Ton contrat sur dim_customers n'enforce pas vraiment le schéma. Déclare toutes les colonnes avec 'data_type' sous 'columns:' dans _marts.yml et mets 'config.contract.enforced: true' sur le modèle."
             exit 1
           fi
-          echo "::notice::Contract correctly caught the type change. dbt build exited with rc=$rc."
+          echo "::notice::Contrat correctement déclenché par le changement de type (dbt build a exit $rc, c'est ce qu'on voulait)."

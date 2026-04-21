@@ -1,17 +1,18 @@
 version: 2
 
 # ----------------------------------------------------------------------------
-# TODO (learner) — fill this file with:
-#   1. Generic tests (not_null, unique, relationships, accepted_values) on
-#      the key columns. Aim for at least 5 tests total across both models.
-#   2. A CONTRACT on dim_customers that declares the full column schema
-#      with types. This is what CI will test against: if you change a
-#      type or drop a column, the build must fail.
+# TODO (à toi) — remplis ce fichier avec :
+#   1. Des tests génériques (not_null, unique, relationships, accepted_values)
+#      sur les colonnes-clés. Vise au moins 5 tests au total sur les deux
+#      modèles.
+#   2. Un CONTRAT sur dim_customers qui déclare toutes les colonnes avec
+#      leurs types. C'est ce que la CI va tester : si tu changes un type
+#      ou supprimes une colonne, le build doit échouer.
 #
-# Reference on contracts:
+# Référence sur les contrats :
 #   https://docs.getdbt.com/reference/resource-configs/contract
 #
-# Example skeleton (delete and replace with real declarations):
+# Squelette d'exemple (supprime et remplace avec tes vraies déclarations) :
 #
 #   - name: dim_customers
 #     config:
@@ -28,10 +29,10 @@ version: 2
 
 models:
   - name: dim_customers
-    description: "Customer dimension, one row per customer, enriched with order aggregates."
-    # TODO: add contract + columns + tests
+    description: "Dimension clients, une ligne par customer_id, enrichie avec les agrégats de commandes."
+    # TODO : ajouter contract + colonnes + tests
 
   - name: fct_orders
-    description: "Orders fact, one row per order, enriched with customer country."
-    # TODO: add columns + tests (at least: not_null + unique on order_id,
-    # relationships to dim_customers on customer_id, accepted_values on status)
+    description: "Fait commandes, une ligne par order_id, enrichi avec le pays du client."
+    # TODO : ajouter colonnes + tests (minimum : not_null + unique sur order_id,
+    # relationships vers dim_customers sur customer_id, accepted_values sur status)

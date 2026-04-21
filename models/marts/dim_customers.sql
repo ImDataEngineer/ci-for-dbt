@@ -1,24 +1,24 @@
--- TODO (learner): build the customer dimension.
+-- TODO (à toi) : construis la dimension clients.
 --
--- Expected columns:
---   customer_id        (primary key, unique, not null)
---   email              (lowercased)
+-- Colonnes attendues :
+--   customer_id        (clé primaire, unique, not null)
+--   email              (lowercase)
 --   name
 --   country
 --   plan
 --   signed_up_at       (date)
---   total_orders       (int, number of orders with status != 'cancelled')
---   total_spend_eur    (decimal, sum of amount_eur for non-cancelled orders)
---   first_order_date   (date, nullable for customers with no paid order)
+--   total_orders       (int — nombre de commandes avec status != 'cancelled')
+--   total_spend_eur    (decimal — somme amount_eur sur les commandes non-cancelled)
+--   first_order_date   (date, nullable pour les clients sans commande payée)
 --
--- Hints:
---   - Start from {{ ref('stg_customers') }} left joined to a per-customer
---     aggregation on {{ ref('stg_orders') }}.
---   - Exclude 'cancelled' orders when computing total_orders and total_spend.
---   - Keep customers who have zero orders: coalesce totals to 0.
+-- Pistes :
+--   - Pars de {{ ref('stg_customers') }} LEFT JOIN sur une agrégation
+--     per-customer de {{ ref('stg_orders') }}.
+--   - Exclus les 'cancelled' dans total_orders et total_spend.
+--   - Garde les clients sans commande : coalesce les totaux à 0.
 --
--- When you're done, run `make build` locally. Then fill _marts.yml with
--- the tests and the contract that the CI will check.
+-- Quand tu as fini, lance `make build` localement. Puis remplis _marts.yml
+-- avec les tests et le contrat que la CI va vérifier.
 
 select
-    1 as placeholder  -- replace me
+    1 as placeholder  -- remplace-moi
