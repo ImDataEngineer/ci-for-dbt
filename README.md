@@ -96,7 +96,7 @@ make build
 make lint
 ```
 
-En alternative zéro-setup : ouvre le projet dans Ona via le bouton "Commencer" sur iamdataeng.fr — tout sera installé automatiquement dans le devcontainer.
+En alternative zéro-setup : ouvre le projet dans GitHub Codespaces via le bouton "Commencer" sur iamdataeng.vercel.app — tout sera installé automatiquement dans le devcontainer.
 
 ---
 
