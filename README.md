@@ -1,132 +1,170 @@
-# ci-for-dbt — Une CI qui teste vraiment ton SQL
+> *Also available in [French](./README.fr.md).*
 
-**Niveau :** junior · **Durée estimée :** ~8 heures · **Stack :** dbt-core, dbt-duckdb, sqlfluff, GitHub Actions
+[![Template](https://img.shields.io/badge/repo-template-1e293b?style=flat-square)](https://github.com/ImDataEngineer/ci-for-dbt/generate) [![iamdataeng.com](https://img.shields.io/badge/iamdataeng.com-2563eb?style=flat-square)](https://iamdataeng.com/projects/sedo.ci-for-dbt)
 
----
+> **Context.** Coursework template from [iamdataeng.com/projects/sedo.ci-for-dbt](https://iamdataeng.com/projects/sedo.ci-for-dbt). Fork, complete the TODO blocks, push, receive a pedagogical CI verdict. Not a maintained open-source project, an evaluated exercise.
 
-## Le scénario
+# ci-for-dbt — a CI that actually tests your SQL
 
-Tu viens d'arriver dans une boîte dont le projet dbt a **zéro test et zéro CI**. Les analystes cassent les modèles à chaque review, personne ne voit rien, et on découvre la régression quand un dashboard renvoie n'importe quoi le lundi matin.
-
-Ta mission : **sortir cette équipe de l'amateurisme**. Tu pars d'un mini projet dbt (staging + marts) sur un jeu de données fourni, tu ajoutes les tests qui comptent, et tu câbles une CI qui attrape trois classes de régression avant qu'elles atteignent la prod :
-
-1. **Erreur de syntaxe SQL** (via `sqlfluff`)
-2. **Dérive de schéma** (via contrats dbt)
-3. **Défaut qualité donnée** (via tests dbt génériques + singuliers)
+**Level:** junior · **Estimated time:** ~8 hours · **Stack:** dbt-core, dbt-duckdb, sqlfluff, GitHub Actions
 
 ---
 
-## Ce qui tourne déjà
+## The scenario
 
-Pour que tu te concentres sur ce qui compte pédagogiquement, le template fournit :
+You just joined a company whose dbt project has **zero tests and zero
+CI**. Analysts break models on every review, nobody notices, and the
+regression surfaces on Monday morning when a dashboard shows garbage.
 
-- **Un projet dbt fonctionnel** (`dbt_project.yml`, `profiles.yml` pointant vers DuckDB local)
-- **Les deux seeds** : `seeds/raw_customers.csv` (50 clients) + `seeds/raw_orders.csv` (200 commandes)
-- **Deux staging models déjà écrits** (`stg_customers`, `stg_orders`) — reference pour le pattern
-- **Une config `sqlfluff`** pour DuckDB
-- **Une rubrique d'évaluation CI** (`.github/workflows/iamdataeng-evaluate.yml`) — **ne la modifie pas**, c'est elle qui détermine si ta soumission passe
+Your mission: **drag this team out of amateur hour**. You start from a
+minimal dbt project (staging + marts) on a provided dataset, you add the
+tests that matter, and you wire a CI that catches three classes of
+regression before they hit production:
 
-## Ce que tu dois faire
+1. **SQL syntax error** (via `sqlfluff`)
+2. **Schema drift** (via dbt contracts)
+3. **Data-quality defect** (via dbt generic + singular tests)
 
-### 1. Implémenter les deux marts (`models/marts/`)
+---
 
-**`dim_customers.sql`** — dimension client, une ligne par `customer_id`. Colonnes attendues :
+## What's already running
 
-| colonne | type | description |
+So that you focus on what matters pedagogically, the template ships:
+
+- **A working dbt project** (`dbt_project.yml`, `profiles.yml` pointing
+  at local DuckDB)
+- **The two seeds**: `seeds/raw_customers.csv` (50 customers) +
+  `seeds/raw_orders.csv` (200 orders)
+- **Two staging models already written** (`stg_customers`, `stg_orders`)
+  — reference for the pattern
+- **A `sqlfluff` config** for DuckDB
+- **A CI evaluation rubric**
+  (`.github/workflows/iamdataeng-evaluate.yml`) — **don't modify it**,
+  it's the file that decides whether your submission passes
+
+## What you have to do
+
+### 1. Implement the two marts (`models/marts/`)
+
+**`dim_customers.sql`** — customer dimension, one row per `customer_id`.
+Expected columns:
+
+| column | type | description |
 |---|---|---|
-| `customer_id` | varchar | Clé primaire, unique, non-null |
-| `email` | varchar | Email lowercase |
-| `name` | varchar | Nom complet |
-| `country` | varchar | Code pays ISO-2 |
+| `customer_id` | varchar | Primary key, unique, not null |
+| `email` | varchar | Lowercased email |
+| `name` | varchar | Full name |
+| `country` | varchar | ISO-2 country code |
 | `plan` | varchar | `free` / `pro` / `enterprise` |
-| `signed_up_at` | date | Date d'inscription |
-| `total_orders` | integer | Nombre de commandes non-cancelled |
-| `total_spend_eur` | decimal(18,2) | Somme `amount_eur` des commandes non-cancelled |
-| `first_order_date` | date | Nullable si aucune commande |
+| `signed_up_at` | date | Signup date |
+| `total_orders` | integer | Count of non-cancelled orders |
+| `total_spend_eur` | decimal(18,2) | Sum of `amount_eur` over non-cancelled orders |
+| `first_order_date` | date | Nullable if no order |
 
-**`fct_orders.sql`** — fait commandes, une ligne par `order_id`. Colonnes attendues :
+**`fct_orders.sql`** — orders fact, one row per `order_id`. Expected
+columns:
 
-| colonne | type | description |
+| column | type | description |
 |---|---|---|
-| `order_id` | varchar | Clé primaire |
-| `customer_id` | varchar | FK vers `dim_customers.customer_id` |
+| `order_id` | varchar | Primary key |
+| `customer_id` | varchar | FK to `dim_customers.customer_id` |
 | `order_date` | date | |
 | `amount_cents` | integer | |
 | `amount_eur` | decimal(18,2) | |
-| `status` | varchar | Un de `placed`, `paid`, `cancelled`, `refunded` |
-| `is_revenue` | boolean | `true` si `status = 'paid'` |
-| `customer_country` | varchar | Dénormalisé depuis `dim_customers.country` |
+| `status` | varchar | One of `placed`, `paid`, `cancelled`, `refunded` |
+| `is_revenue` | boolean | `true` if `status = 'paid'` |
+| `customer_country` | varchar | Denormalized from `dim_customers.country` |
 
-### 2. Écrire les tests dans `models/marts/_marts.yml`
+### 2. Write the tests in `models/marts/_marts.yml`
 
-**Minimum 5 tests** répartis sur les deux modèles. Utilise les tests génériques dbt :
-- `not_null` sur les clés et colonnes critiques
-- `unique` sur les clés primaires
-- `relationships` pour la FK `fct_orders.customer_id` → `dim_customers.customer_id`
-- `accepted_values` sur `fct_orders.status`
+**Minimum 5 tests** spread across the two models. Use dbt generic tests:
+- `not_null` on keys and critical columns
+- `unique` on primary keys
+- `relationships` for the FK `fct_orders.customer_id` →
+  `dim_customers.customer_id`
+- `accepted_values` on `fct_orders.status`
 
-### 3. Écrire au moins un test singulier dans `tests/`
+### 3. Write at least one singular test in `tests/`
 
-Un test singulier est une requête qui retourne des lignes quand une règle métier est violée. Exemple pertinent : *"les commandes doivent avoir un `amount_cents > 0` sauf si statut cancelled/refunded"*.
+A singular test is a query that returns rows when a business rule is
+violated. A relevant example: *"orders must have `amount_cents > 0`
+unless their status is cancelled/refunded"*.
 
-### 4. Déclarer un contrat sur `dim_customers`
+### 4. Declare a contract on `dim_customers`
 
-Dans `_marts.yml`, ajoute `config.contract.enforced: true` sur `dim_customers`, et déclare **toutes les colonnes** avec leur `data_type`. Le job CI `contract-breakage` simule un changement de schéma côté source (rename de colonne) — ton contrat doit faire **échouer** `dbt build` avec une erreur explicite.
+In `_marts.yml`, add `config.contract.enforced: true` on
+`dim_customers`, and declare **all columns** with their `data_type`.
+The `contract-breakage` CI job simulates a source schema change (a
+column rename) — your contract must make `dbt build` **fail** with an
+explicit error.
 
-[Doc dbt sur les contracts](https://docs.getdbt.com/reference/resource-configs/contract)
+[dbt docs on contracts](https://docs.getdbt.com/reference/resource-configs/contract)
 
 ---
 
-## Démarrage rapide
+## Quick start
 
 ```bash
-# 1. Dépendances Python
+# 1. Python dependencies
 make install
 
-# 2. Packages dbt (dbt_utils)
+# 2. dbt packages (dbt_utils)
 make deps
 
-# 3. Charger les seeds
+# 3. Load seeds
 make seed
 
-# 4. Build complet (seeds + modèles + tests)
+# 4. Full build (seeds + models + tests)
 make build
 
-# 5. Lint SQL
+# 5. SQL lint
 make lint
 ```
 
-En alternative zéro-setup : ouvre le projet dans GitHub Codespaces via le bouton "Commencer" sur iamdataeng.vercel.app — tout sera installé automatiquement dans le devcontainer.
+Alternative, zero-setup: open the project in GitHub Codespaces via the
+"Start" button on iamdataeng.com — everything will be installed
+automatically in the devcontainer.
 
 ---
 
-## Comment ton travail est évalué
+## How your work is graded
 
-À chaque push sur `main` ou sur une branche, le workflow `.github/workflows/iamdataeng-evaluate.yml` tourne et vérifie :
+On every push to `main` or to a branch, the workflow
+`.github/workflows/iamdataeng-evaluate.yml` runs and checks:
 
-| Check | Ce qui est testé | Si ça fail |
+| Check | What's tested | If it fails |
 |---|---|---|
-| **dbt_build_passes** | `dbt build` complet exit 0 | Un modèle plante ou un test échoue. Regarde les logs dbt — la première ligne rouge donne la cause. |
-| **minimum_test_count ≥ 5** | Au moins 5 tests exécutés (génériques + singuliers combinés) | Tu as moins de 5 tests. Ajoute `not_null` sur les PKs, `unique` sur les business keys, `relationships` sur les FKs. |
-| **sqlfluff_passes** | `sqlfluff lint models/` exit 0 | Violations de style SQL. `sqlfluff fix models/` localement peut en corriger la plupart automatiquement. |
-| **contract_breakage_caught** | Après rename d'une colonne dans un seed, `dbt build` DOIT échouer | Ton contrat n'enforce pas réellement le schéma. Déclare toutes les colonnes avec `data_type` et `enforced: true`. |
+| **dbt_build_passes** | Full `dbt build` exits 0 | A model crashed or a test failed. Look at the dbt logs — the first red line gives you the cause. |
+| **minimum_test_count ≥ 5** | At least 5 tests executed (generic + singular combined) | You have fewer than 5 tests. Add `not_null` on PKs, `unique` on business keys, `relationships` on FKs. |
+| **sqlfluff_passes** | `sqlfluff lint models/` exits 0 | SQL style violations. `sqlfluff fix models/` locally can auto-fix most of them. |
+| **contract_breakage_caught** | After a column is renamed in a seed, `dbt build` MUST fail | Your contract doesn't actually enforce the schema. Declare all columns with `data_type` and `enforced: true`. |
 
-Tu peux push autant de fois que tu veux pour itérer. Aucune limite de soumission.
-
----
-
-## Pièges classiques à éviter
-
-- **`{{ ref('stg_customers') }}` dans la FROM** mais pas déclaré comme dépendance en amont → erreur de compilation dbt.
-- **`sqlfluff` configuré pour PostgreSQL** alors que le projet cible DuckDB → faux positifs. Le `.sqlfluff` fourni est déjà bon, ne le change pas.
-- **Tests lancés via `dbt test`** seulement au lieu de `dbt build` → tu rates les modèles qui plantent. Toujours `dbt build`.
-- **Contrat déclaré mais `enforced: false`** (ou oublié) → le contrat est cosmétique, pas un garde-fou.
-- **`data_type` mis en majuscules** (VARCHAR) alors que DuckDB renvoie minuscules → le contrat échoue pour la mauvaise raison. Écris les types en minuscules.
+You can push as many times as you want to iterate. No submission
+limit.
 
 ---
 
-## Références
+## Classic traps to avoid
 
-- Reis & Housley, *Fundamentals of Data Engineering*, chapitre 2 (Undercurrents — DataOps, Testing)
-- dbt docs — [Tests](https://docs.getdbt.com/docs/build/data-tests), [Contracts](https://docs.getdbt.com/reference/resource-configs/contract)
-- Kimball & Ross, chapitre 3 — Grain discipline (applicable au fact `fct_orders`)
+- **`{{ ref('stg_customers') }}` in the FROM** but not declared as an
+  upstream dependency → dbt compile error.
+- **`sqlfluff` configured for PostgreSQL** when the project targets
+  DuckDB → false positives. The provided `.sqlfluff` is already
+  correct, don't change it.
+- **Tests run via `dbt test`** only instead of `dbt build` → you miss
+  models that crash. Always `dbt build`.
+- **Contract declared but `enforced: false`** (or forgotten) → the
+  contract is cosmetic, not a guardrail.
+- **`data_type` in uppercase** (VARCHAR) when DuckDB returns lowercase
+  → the contract fails for the wrong reason. Write types in lowercase.
+
+---
+
+## References
+
+- Reis & Housley, *Fundamentals of Data Engineering*, chapter 2
+  (Undercurrents — DataOps, Testing)
+- dbt docs — [Tests](https://docs.getdbt.com/docs/build/data-tests),
+  [Contracts](https://docs.getdbt.com/reference/resource-configs/contract)
+- Kimball & Ross, chapter 3 — Grain discipline (applies to the
+  `fct_orders` fact)
